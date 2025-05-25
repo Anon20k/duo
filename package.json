@@ -1,10 +1,16 @@
 {
   "name": "duo",
   "version": "1.0.0",
-  "devDependencies": {
-    "gh-pages": "^5.0.0"
+   "scripts": {
+    "build:web": "flutter build web --release --base-href /duo/",
+    "clean:docs": "rimraf docs",
+    "mkdir:docs": "mkdirp docs",
+    "copy:docs": "copyfiles -u 1 build/web/** docs",
+    "deploy:web": "npm run build:web && npm run clean:docs && npm run mkdir:docs && npm run copy:docs"
   },
-  "scripts": {
-    "deploy:web": "flutter build web && gh-pages -d build/web"
+  "devDependencies": {
+    "rimraf": "^5.0.0",
+    "mkdirp": "^4.0.0",
+    "copyfiles": "^2.4.1"
   }
 }
