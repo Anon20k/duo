@@ -1,0 +1,10 @@
+{
+  "name": "duo",
+  "version": "1.0.0",
+  "devDependencies": {
+    "gh-pages": "^5.0.0"
+  },
+  "scripts": {
+    "deploy:web": "flutter build web && gh-pages -d build/web"
+  }
+}
