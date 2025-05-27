@@ -51,6 +51,9 @@ class _PanelNivelesScreenState extends State<PanelNivelesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth > 800;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Niveles por Capítulo')),
       body: FutureBuilder<List<Chapter>>(
@@ -70,132 +73,159 @@ class _PanelNivelesScreenState extends State<PanelNivelesScreen> {
           }
           final chapters = snap.data!;
           return ListView.builder(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: chapters.length,
             itemBuilder: (context, ci) {
               final chapter = chapters[ci];
-              return ExpansionTile(
-                title: Text(
-                  chapter.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  dividerColor: Colors.white24,
+                  unselectedWidgetColor: Colors.white70,
                 ),
-                children: [
-                  for (final nivel in chapter.levels)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16.0),
-                      child: ExpansionTile(
-                        title: Text(
-                          nivel.nivel,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        children: [
-                          for (final seccion in nivel.secciones)
-                            FutureBuilder<int>(
-                              future: _loadErrorCount(ci, nivel, seccion),
-                              builder: (ctx, errSnap) {
-                                final errores = errSnap.data ?? 0;
-                                final totalPreguntas = seccion.etapas.fold<int>(
-                                  0,
-                                  (sum, e) => sum + e.preguntas.length,
-                                );
-                                final exitos = totalPreguntas - errores;
-                                final pctExito =
-                                    totalPreguntas == 0
-                                        ? 0
-                                        : ((exitos / totalPreguntas) * 100)
-                                            .round();
-                                return InkWell(
-                                  onTap:
-                                      () => Navigator.pushNamed(
-                                        context,
-                                        Routes.entrenamiento,
-                                        arguments: seccion,
-                                      ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 6,
-                                      horizontal: 8,
-                                    ),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade900,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black45,
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        // Título y barra
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                seccion.seccion,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                child: LinearProgressIndicator(
-                                                  value:
-                                                      totalPreguntas == 0
-                                                          ? 0
-                                                          : exitos /
-                                                              totalPreguntas,
-                                                  minHeight: 8,
-                                                  backgroundColor:
-                                                      Colors.white24,
-                                                  valueColor:
-                                                      const AlwaysStoppedAnimation<
-                                                        Color
-                                                      >(Colors.green),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                '$exitos / $totalPreguntas  •  $pctExito%',
-                                                style: const TextStyle(
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        // Icono Play
-                                        const SizedBox(width: 12),
-                                        Icon(
-                                          Icons.play_circle_fill,
-                                          color: Colors.lightBlueAccent,
-                                          size: 36,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                        ],
-                      ),
+                child: ExpansionTile(
+                  collapsedBackgroundColor: Colors.transparent,
+                  backgroundColor: Colors.transparent,
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                  childrenPadding: EdgeInsets.zero,
+                  title: Text(
+                    chapter.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                ],
+                  ),
+                  children: [
+                    for (final nivel in chapter.levels)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0),
+                        child: ExpansionTile(
+                          collapsedBackgroundColor: Colors.transparent,
+                          backgroundColor: Colors.transparent,
+                          tilePadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                          ),
+                          title: Text(
+                            nivel.nivel,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          children: [
+                            for (final seccion in nivel.secciones)
+                              FutureBuilder<int>(
+                                future: _loadErrorCount(ci, nivel, seccion),
+                                builder: (ctx, errSnap) {
+                                  final errores = errSnap.data ?? 0;
+                                  final totalPreguntas = seccion.etapas
+                                      .fold<int>(
+                                        0,
+                                        (sum, e) => sum + e.preguntas.length,
+                                      );
+                                  final exitos = totalPreguntas - errores;
+                                  final completion =
+                                      totalPreguntas == 0
+                                          ? 0.0
+                                          : exitos / totalPreguntas;
+
+                                  return InkWell(
+                                    onTap:
+                                        () => Navigator.pushNamed(
+                                          context,
+                                          Routes.entrenamiento,
+                                          arguments: seccion,
+                                        ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                        vertical: 8,
+                                        horizontal: 24,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal: 16,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                          colors: [
+                                            Color(0xFFe96443),
+                                            Color(0xFF904e95),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Color.fromARGB(100, 0, 0, 0),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  seccion.seccion,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  child: LinearProgressIndicator(
+                                                    value: completion,
+                                                    minHeight: 8,
+                                                    backgroundColor:
+                                                        Colors.white24,
+                                                    valueColor:
+                                                        const AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(
+                                                          Colors
+                                                              .lightGreenAccent,
+                                                        ),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '$exitos / $totalPreguntas   ·   ${(completion * 100).round()}%',
+                                                  style: const TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Icon(
+                                            Icons.play_circle_fill,
+                                            color: Colors.white,
+                                            size: isWide ? 32 : 28,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               );
             },
           );
