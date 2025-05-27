@@ -10,9 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          persist-credentials: false  # para no exponer tus credenciales
+          submodules: false
+          fetch-depth: 0 
 
       - name: Install dependencies
         run: npm install
