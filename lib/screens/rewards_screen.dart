@@ -6,24 +6,24 @@ import 'package:intl/intl.dart';
 class RewardsScreen extends StatelessWidget {
   const RewardsScreen({Key? key}) : super(key: key);
 
-  /// Generate the last 7 days as DateTimes
+  /// Últimos 7 días
   List<DateTime> get _dates {
     final today = DateTime.now();
     return List.generate(
       7,
-      (i) => DateTime(today.year, today.month, today.day - 6 + i),
+      (i) => DateTime(today.year, today.month, today.day - (6 - i)),
     );
   }
 
-  /// Study data in **minutes**, x = index+1
+  /// Datos de estudio (minutos) para cada día 1..7
   List<FlSpot> get _studyDataMin => const [
-    FlSpot(1, 90), // 1.5h → 90m
-    FlSpot(2, 120), // 2h → 120m
-    FlSpot(3, 60), // 1h → 60m
-    FlSpot(4, 150), // 2.5h → 150m
-    FlSpot(5, 180), // 3h → 180m
-    FlSpot(6, 120), // 2h → 120m
-    FlSpot(7, 168), // 2.8h → 168m
+    FlSpot(1, 90),
+    FlSpot(2, 120),
+    FlSpot(3, 60),
+    FlSpot(4, 150),
+    FlSpot(5, 180),
+    FlSpot(6, 120),
+    FlSpot(7, 168),
   ];
 
   List<PieChartSectionData> get _accuracyData {
@@ -62,7 +62,11 @@ class RewardsScreen extends StatelessWidget {
         final isWide = constraints.maxWidth > 800;
         final padding = isWide ? 32.0 : 16.0;
 
-        Widget chartCard({required Widget child, required String title}) {
+        Widget chartCard({
+          required Widget child,
+          required String title,
+          double aspect = 16 / 9,
+        }) {
           return Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -73,7 +77,7 @@ class RewardsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.white.withValues(alpha: 20),
+                  color: Colors.white.withOpacity(0.1),
                   blurRadius: 12,
                   spreadRadius: 1,
                 ),
@@ -92,21 +96,20 @@ class RewardsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Expanded(child: child),
+                // Mantiene la proporción sin expandir más de lo necesario:
+                AspectRatio(aspectRatio: aspect, child: child),
               ],
             ),
           );
         }
 
-        // --- 1) Line Chart (minutes vs date) ---
+        // 1) Gráfico de líneas: minutos vs fecha
         final lineChart = LineChart(
           LineChartData(
             gridData: FlGridData(
               show: true,
               drawVerticalLine: false,
               horizontalInterval: 30,
-              getDrawingHorizontalLine:
-                  (y) => FlLine(color: Colors.white24, strokeWidth: 1),
             ),
             titlesData: FlTitlesData(
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -118,27 +121,25 @@ class RewardsScreen extends StatelessWidget {
                   showTitles: true,
                   interval: 30,
                   reservedSize: 40,
-                  getTitlesWidget: (value, meta) {
-                    return Text(
-                      '${value.toInt()}m',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
+                  getTitlesWidget:
+                      (v, _) => Text(
+                        '${v.toInt()}m',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
-                    );
-                  },
                 ),
               ),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
                   interval: 1,
-                  getTitlesWidget: (value, meta) {
-                    final idx = value.toInt() - 1;
+                  getTitlesWidget: (v, _) {
+                    final idx = v.toInt() - 1;
                     if (idx < 0 || idx >= _dates.length)
                       return const SizedBox();
-                    final date = _dates[idx];
-                    final formatted = DateFormat('dd-MM').format(date);
+                    final formatted = DateFormat('dd-MM').format(_dates[idx]);
                     return Text(
                       formatted,
                       style: const TextStyle(
@@ -168,7 +169,7 @@ class RewardsScreen extends StatelessWidget {
           ),
         );
 
-        // --- 2) Pie Chart ---
+        // 2) Gráfico de pastel: precisión
         final pieChart = PieChart(
           PieChartData(
             sections: _accuracyData,
@@ -177,20 +178,25 @@ class RewardsScreen extends StatelessWidget {
           ),
         );
 
+        // ─────────── Desktop ──────────────────
         if (isWide) {
-          // Desktop: side by side
           return Padding(
             padding: EdgeInsets.all(padding),
             child: Row(
               children: [
                 Expanded(
-                  child: chartCard(child: lineChart, title: 'Estudio vs Fecha'),
+                  child: chartCard(
+                    child: lineChart,
+                    title: 'Estudio vs Fecha',
+                    aspect: 16 / 9,
+                  ),
                 ),
                 const SizedBox(width: 32),
                 Expanded(
                   child: chartCard(
                     child: pieChart,
                     title: 'Precisión de respuestas',
+                    aspect: 1,
                   ),
                 ),
               ],
@@ -198,22 +204,21 @@ class RewardsScreen extends StatelessWidget {
           );
         }
 
-        // Mobile: stacked
-        return Padding(
+        // ─────────── Móvil ────────────────────
+        return SingleChildScrollView(
           padding: EdgeInsets.all(padding),
           child: Column(
             children: [
-              SizedBox(
-                height: constraints.maxHeight * 0.4,
-                child: chartCard(child: lineChart, title: 'Estudio vs Fecha'),
+              chartCard(
+                child: lineChart,
+                title: 'Estudio vs Fecha',
+                aspect: constraints.maxWidth / (constraints.maxWidth * 0.6),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                height: constraints.maxHeight * 0.4,
-                child: chartCard(
-                  child: pieChart,
-                  title: 'Precisión de respuestas',
-                ),
+              chartCard(
+                child: pieChart,
+                title: 'Precisión de respuestas',
+                aspect: 1,
               ),
             ],
           ),

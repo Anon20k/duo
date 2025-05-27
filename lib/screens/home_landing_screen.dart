@@ -290,20 +290,18 @@ class HomeLandingScreen extends StatelessWidget {
               );
             }
 
-            // ─── Móvil: Grid 2×3 sin scroll
-            return Padding(
+            // ─── Móvil: scroll vertical con tarjetas proporcionales ───────────────────
+            return SingleChildScrollView(
               padding: EdgeInsets.all(gap),
-              child: GridView.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: gap,
-                crossAxisSpacing: gap,
-                childAspectRatio:
-                    constraints.maxWidth /
-                    constraints.maxHeight *
-                    2, // ajusta para tu estética
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                children: cards,
+              child: Column(
+                children:
+                    cards.map((c) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: gap),
+                        // Ajusta la proporción según la estética que busques, 1 es cuadrado
+                        child: AspectRatio(aspectRatio: 1, child: c),
+                      );
+                    }).toList(),
               ),
             );
           },

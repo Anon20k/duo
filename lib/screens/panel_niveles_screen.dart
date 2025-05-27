@@ -32,7 +32,6 @@ class _PanelNivelesScreenState extends State<PanelNivelesScreen> {
   Future<List<Chapter>> _loadAllChapters() async {
     final nivel1 = await QuizService.loadNivel(1, 'nivel_sumas_resta');
     final nivel2 = await QuizService.loadNivel(2, 'nivel_tablas_multiplicar');
-
     return [
       Chapter(title: 'Capítulo 1: Conceptos Básicos', levels: [nivel1]),
       Chapter(title: 'Capítulo 2: Tablas de Multiplicar', levels: [nivel2]),
@@ -83,124 +82,120 @@ class _PanelNivelesScreenState extends State<PanelNivelesScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                children:
-                    chapter.levels.map((nivel) {
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 16.0),
-                        child: ExpansionTile(
-                          title: Text(
-                            nivel.nivel,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                children: [
+                  for (final nivel in chapter.levels)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: ExpansionTile(
+                        title: Text(
+                          nivel.nivel,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                          children:
-                              nivel.secciones.map((seccion) {
-                                // calcular total de preguntas
+                        ),
+                        children: [
+                          for (final seccion in nivel.secciones)
+                            FutureBuilder<int>(
+                              future: _loadErrorCount(ci, nivel, seccion),
+                              builder: (ctx, errSnap) {
+                                final errores = errSnap.data ?? 0;
                                 final totalPreguntas = seccion.etapas.fold<int>(
                                   0,
                                   (sum, e) => sum + e.preguntas.length,
                                 );
-                                // para cada sección, mostramos primero un progreso simulado
-                                final completion =
+                                final exitos = totalPreguntas - errores;
+                                final pctExito =
                                     totalPreguntas == 0
-                                        ? 0.0
-                                        : 0.7; // Aquí devuélvelo real si lo guardas
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 16.0,
-                                    right: 16.0,
-                                    bottom: 8,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      // Barra de progreso de la sección
-                                      Text(
-                                        seccion.seccion,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        ? 0
+                                        : ((exitos / totalPreguntas) * 100)
+                                            .round();
+                                return InkWell(
+                                  onTap:
+                                      () => Navigator.pushNamed(
+                                        context,
+                                        Routes.entrenamiento,
+                                        arguments: seccion,
                                       ),
-                                      const SizedBox(height: 4),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: LinearProgressIndicator(
-                                          value: completion,
-                                          minHeight: 12,
-                                          backgroundColor: Colors.grey[300],
-                                          valueColor:
-                                              const AlwaysStoppedAnimation<
-                                                Color
-                                              >(Colors.green),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 6,
+                                      horizontal: 8,
+                                    ),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade900,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black45,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      // Desplegable con errores y totales
-                                      FutureBuilder<int>(
-                                        future: _loadErrorCount(
-                                          ci,
-                                          nivel,
-                                          seccion,
-                                        ),
-                                        builder: (ctx, errSnap) {
-                                          final errores = errSnap.data ?? 0;
-                                          final exitos =
-                                              totalPreguntas - errores;
-                                          final pctExito =
-                                              totalPreguntas == 0
-                                                  ? 0
-                                                  : ((exitos / totalPreguntas) *
-                                                          100)
-                                                      .round();
-                                          final pctFracaso = 100 - pctExito;
-                                          return ExpansionTile(
-                                            title: const Text('Detalles'),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // Título y barra
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              ListTile(
-                                                title: Text(
-                                                  'Errores: $errores',
+                                              Text(
+                                                seccion.seccion,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                              ListTile(
-                                                title: Text(
-                                                  'Preguntas totales: $totalPreguntas',
+                                              const SizedBox(height: 6),
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                child: LinearProgressIndicator(
+                                                  value:
+                                                      totalPreguntas == 0
+                                                          ? 0
+                                                          : exitos /
+                                                              totalPreguntas,
+                                                  minHeight: 8,
+                                                  backgroundColor:
+                                                      Colors.white24,
+                                                  valueColor:
+                                                      const AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Colors.green),
                                                 ),
                                               ),
-                                              ListTile(
-                                                title: Text(
-                                                  'Éxito: $pctExito%',
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                '$exitos / $totalPreguntas  •  $pctExito%',
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
                                                 ),
-                                              ),
-                                              ListTile(
-                                                title: Text(
-                                                  'Fracaso: $pctFracaso%',
-                                                ),
-                                              ),
-                                              ListTile(
-                                                trailing: const Icon(
-                                                  Icons.play_arrow,
-                                                ),
-                                                title: const Text('Entrenar'),
-                                                onTap: () {
-                                                  Navigator.pushNamed(
-                                                    context,
-                                                    Routes.entrenamiento,
-                                                    arguments: seccion,
-                                                  );
-                                                },
                                               ),
                                             ],
-                                          );
-                                        },
-                                      ),
-                                    ],
+                                          ),
+                                        ),
+                                        // Icono Play
+                                        const SizedBox(width: 12),
+                                        Icon(
+                                          Icons.play_circle_fill,
+                                          color: Colors.lightBlueAccent,
+                                          size: 36,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
-                              }).toList(),
-                        ),
-                      );
-                    }).toList(),
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
               );
             },
           );
